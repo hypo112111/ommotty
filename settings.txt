@@ -1,0 +1,3 @@
+SERVER irc.chat.twitch.tv
+PORT 6667
+CHANNEL #<channel name>
