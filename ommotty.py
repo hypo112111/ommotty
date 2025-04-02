@@ -47,6 +47,11 @@ class ommobotnet:
   
   def make_pool(self):
     self.pool.clear()
+
+    if len(self.ommobots) < SERVINGOMMOS:
+      print("Not enough ommos to make a pool")
+      return
+
     for ommos in range(SERVINGOMMOS):
       self.pool.append(self.ommobots[random.randint(0,len(self.ommobots)-1)])
 
@@ -55,6 +60,8 @@ class ommobotnet:
   def send_message(self, message):
     for bot in self.pool:
       bot.send_message(message)
+    
+    print(f"Sent message: {message}")
 
 # Example usage
 
