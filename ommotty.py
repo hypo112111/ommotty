@@ -48,6 +48,7 @@ class ommobotnet:
       self.pool.append(self.ommobots[random.randint(1,len(self.ommobots))])
     for bot in self.pool:
       bot.send_message(message)
+    pool.clear()
 
 # Example usage
 
@@ -56,7 +57,7 @@ load_settings()
 ommotty = ommobotnet()
 
 while True:
-    msg = input("Enter message: ")
+    msg = input()
     if msg.lower() == "exit":
         break
     ommotty.send_message(msg)
