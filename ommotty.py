@@ -43,12 +43,18 @@ class ommobotnet:
 
     print(f"Connected to {CHANNEL}")
 
-  def send_message(self, message):
+    self.make_pool()
+  
+  def make_pool(self):
+    self.pool.clear()
     for ommos in range(SERVINGOMMOS):
-      self.pool.append(self.ommobots[random.randint(1,len(self.ommobots))])
+      self.pool.append(self.ommobots[random.randint(0,len(self.ommobots)-1)])
+
+    print(f"Pool size: {len(self.pool)}")
+
+  def send_message(self, message):
     for bot in self.pool:
       bot.send_message(message)
-    self.pool.clear()
 
 # Example usage
 
@@ -59,5 +65,8 @@ ommotty = ommobotnet()
 while True:
     msg = input()
     if msg.lower() == "exit":
-        break
+      break
+    elif msg.lower() == "new_pool":
+      ommotty.make_pool()
+      continue
     ommotty.send_message(msg)
