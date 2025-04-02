@@ -2,78 +2,74 @@ import socket
 import random
 
 def load_settings():
-  global SERVER, PORT, CHANNEL, SERVINGOMMOS
-  with open("settings.txt", "r") as file:
-    lines = []
-    for line in file:
-      lines.append(line.strip().split(' '))
-    SERVER, PORT, CHANNEL, SERVINGOMMOS = lines[0][1], int(lines[1][1]), lines[2][1], int(lines[3][1])
+    with open("settings.txt", "r") as file:
+        lines = [line.strip().split(" ") for line in file]
+    return lines[0][1], int(lines[1][1]), lines[2][1], int(lines[3][1])
 
+SERVER, PORT, CHANNEL, SERVINGOMMOS = load_settings()
 
-class ommobot:
-  def __init__(self, TOKEN, NICKNAME, CHANNEL):
-    # Connect to Twitch IRC
-    self.sock = socket.socket()
-    self.sock.connect((SERVER, PORT))
-    self.sock.send(f"PASS {TOKEN}\n".encode("utf-8"))
-    self.sock.send(f"NICK {NICKNAME}\n".encode("utf-8"))
-    self.sock.send(f"JOIN {CHANNEL}\n".encode("utf-8"))
+class Ommobot:
+    def __init__(self, token, nickname, channel):
+        self.nickname = nickname
+        self.channel = channel
+        self.sock = socket.socket()
+        
+        try:
+            self.sock.connect((SERVER, PORT))
+            self.sock.send(f"PASS {token}\r\n".encode("utf-8"))
+            self.sock.send(f"NICK {nickname}\r\n".encode("utf-8"))
+            self.sock.send(f"JOIN {channel}\r\n".encode("utf-8"))
+        except Exception as e:
+            print(f"Connection error for {nickname}: {e}")
+            self.sock = None  # Mark as inactive
 
-  # Function to send messages
-  def send_message(self, message):
-    self.sock.send(f"PRIVMSG {CHANNEL} :{message}\n".encode("utf-8"))
+    def send_message(self, message):
+        if self.sock:
+            try:
+                self.sock.send(f"PRIVMSG {self.channel} :{message}\r\n".encode("utf-8"))
+            except Exception as e:
+                print(f"Message send error for {self.nickname}: {e}")
 
-class ommobotnet:
+class OmmobotNet:
+    def __init__(self):
+        self.ommobots = []
+        self.pool = []
 
-  ommobots = []
-  pool = []
+        try:
+            with open("ommos.txt", "r") as file:
+                lines = [line.strip().split(" ") for line in file]
+            
+            for bot, token in lines:
+                new_bot = Ommobot(token, bot, CHANNEL)
+                if new_bot.sock:  # Add only successfully connected bots
+                    self.ommobots.append(new_bot)
 
-  def __init__(self):
-    bots, tokens = [], []
-    with open("ommos.txt", "r") as file:
-      lines = []
-      for line in file:
-        lines.append(line.strip().split(' '))
-      for line in lines:
-        bots.append(line[0])
-        tokens.append(line[1])
+            print(f"Connected {len(self.ommobots)} bots to {CHANNEL}")
+            self.make_pool()
+        except Exception as e:
+            print(f"Error loading bots: {e}")
 
-    for bot, token in zip(bots, tokens):
-      self.ommobots.append(ommobot(token, bot, CHANNEL))
+    def make_pool(self):
+        self.pool.clear()
+        if len(self.ommobots) < SERVINGOMMOS:
+            print("Not enough bots to make a pool.")
+            return
 
-    print(f"Connected to {CHANNEL}")
+        self.pool = random.sample(self.ommobots, SERVINGOMMOS)
+        print(f"New pool created with {len(self.pool)} bots.")
 
-    self.make_pool()
-  
-  def make_pool(self):
-    self.pool.clear()
+    def send_message(self, message):
+        for bot in self.pool:
+            bot.send_message(message)
+        print(f"Sent message: {message}")
 
-    if len(self.ommobots) < SERVINGOMMOS:
-      print("Not enough ommos to make a pool")
-      return
-
-    for ommos in range(SERVINGOMMOS):
-      self.pool.append(self.ommobots[random.randint(0,len(self.ommobots)-1)])
-
-    print(f"Pool size: {len(self.pool)}")
-
-  def send_message(self, message):
-    for bot in self.pool:
-      bot.send_message(message)
-    
-    print(f"Sent message: {message}")
-
-# Example usage
-
-load_settings()
-
-ommotty = ommobotnet()
+ommotty = OmmobotNet()
 
 while True:
-    msg = input()
+    msg = input("> ")
     if msg.lower() == "exit":
-      break
+        break
     elif msg.lower() == "new_pool":
-      ommotty.make_pool()
-      continue
-    ommotty.send_message(msg)
+        ommotty.make_pool()
+    else:
+        ommotty.send_message(msg)
