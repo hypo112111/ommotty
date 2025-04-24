@@ -1,5 +1,6 @@
 import socket
 import random
+import torch
 
 SERVER, PORT = "irc.chat.twitch.tv", 6667
 CHANNEL = "#default"
